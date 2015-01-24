@@ -27,6 +27,7 @@
 #include <QProcess>
 #include <QFileInfo>
 #include <QDebug>
+#include <QLibraryInfo>
 
 // Under wince interface is defined, so undef it otherwise it breaks it
 #undef interface
@@ -189,6 +190,11 @@ static PSID getCurrentProcessOwner()
     return getProcessOwner(GetCurrentProcess());
 }
 
+static QString installRoot()
+{
+    return QLibraryInfo::location(QLibraryInfo::PrefixPath);
+}
+
 /**
  holds single process
  */
@@ -329,6 +335,7 @@ void ProcessList::init()
 
 ProcessListEntry *ProcessList::find(const QString &name)
 {
+    QString installPrefix = installRoot();
     for (ProcessListEntry *ple : qAsConst(m_processes)) {
         if (ple->pid < 0) {
             qDebug() << "negative pid!";
@@ -339,9 +346,9 @@ ProcessListEntry *ProcessList::find(const QString &name)
             continue;
         }
 
-        if (!ple->path.isEmpty() && !ple->path.toLower().startsWith(QString(QStringLiteral(CMAKE_INSTALL_PREFIX)).toLower())) {
+        if (!ple->path.isEmpty() && !ple->path.toLower().startsWith(installPrefix.toLower())) {
             // process is outside of installation directory
-            qDebug() << "path of the process" << name << "seems to be outside of the installPath:" << ple->path << QStringLiteral(CMAKE_INSTALL_PREFIX);
+            qDebug() << "path of the process" << name << "seems to be outside of the installPath:" << ple->path << installPrefix;
             continue;
         }
         return ple;
@@ -421,7 +428,7 @@ bool checkIfRegisteredInDBus(const QString &name, int _timeout = 10)
 
 void listAllRunningKDEProcesses(ProcessList &processList)
 {
-    QString installPrefix = QStringLiteral(CMAKE_INSTALL_PREFIX);
+    QString installPrefix = installRoot();
 
     const auto list = processList.list();
     for (const ProcessListEntry *ple : list) {
@@ -433,7 +440,7 @@ void listAllRunningKDEProcesses(ProcessList &processList)
 
 void terminateAllRunningKDEProcesses(ProcessList &processList)
 {
-    QString installPrefix = QStringLiteral(CMAKE_INSTALL_PREFIX);
+    QString installPrefix = installRoot();
 
     const auto list = processList.list();
     for (const ProcessListEntry *ple : list) {
