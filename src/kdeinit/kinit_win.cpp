@@ -638,8 +638,8 @@ int main(int argc, char **argv, char **envp)
         }
     }
 
-    if (launch_klauncher && !processList.find("klauncher")) {
-        pid = launch("klauncher");
+    if (launch_klauncher && !processList.find("klauncher5")) {
+        pid = launch("klauncher5");
         if (!pid || !checkIfRegisteredInDBus("org.kde.klauncher5", 10)) {
             exit(1);
         }
