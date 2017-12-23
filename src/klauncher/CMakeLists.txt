@@ -32,6 +32,10 @@ target_link_libraries(kdeinit_klauncher
    KF5::I18n   # i18n()
    Qt5::DBus
 )
+if(WIN32)
+    set_target_properties(klauncher PROPERTIES OUTPUT_NAME klauncher5)
+endif()
+
 if (APPLE)
     target_link_libraries(kdeinit_klauncher "-framework CoreFoundation")
 endif()
