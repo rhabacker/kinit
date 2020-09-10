@@ -215,7 +215,7 @@ protected:
     QSocketNotifier *kdeinitNotifier;
 #endif
     KIO::ConnectionServer mConnectionServer;
-    QList<IdleSlave *> mSlaveList;
+    QList<QPointer<IdleSlave>> mSlaveList;
     QTimer mTimer;
     bool bProcessingQueue;
     QString mSlaveDebug;
