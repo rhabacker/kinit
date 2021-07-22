@@ -664,7 +664,7 @@ int main(int argc, char **argv, char **envp)
 
     if (launch_kded && !processList.find(KDED_EXENAME)) {
         pid = launch(KDED_EXENAME);
-        if (!pid || !checkIfRegisteredInDBus("org.kde.kded5", 10)) {
+        if (!pid || !checkIfRegisteredInDBus("org.kde." KDED_EXENAME, 10)) {
             exit(1);
         }
     }
