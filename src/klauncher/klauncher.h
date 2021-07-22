@@ -8,6 +8,8 @@
 #ifndef _KLAUNCHER_H_
 #define _KLAUNCHER_H_
 
+#include "autostart.h"
+
 #include <qplatformdefs.h>
 
 #include <config-kdeinit.h> // HAVE_X11
@@ -60,6 +62,7 @@ public:
     status_t status;
     QDBusMessage transaction;
     KService::DBusStartupType dbus_startup_type;
+    bool autoStart;
     bool wait; //wait until the process dies before finishing the request
     QString errorMsg;
 #if HAVE_X11
@@ -108,7 +111,7 @@ protected:
 
     bool start_service(KService::Ptr service, const QStringList &urls,
                        const QStringList &envs, const QByteArray &startup_id,
-                       bool blind, const QDBusMessage &msg);
+                       bool blind, bool autoStart, const QDBusMessage &msg);
 
     void createArgs(KLaunchRequest *request, const KService::Ptr service,
                     const QList<QUrl> &url);
@@ -120,7 +123,14 @@ protected:
     void cancel_service_startup_info(KLaunchRequest *request, const QByteArray &startup_id,
                                      const QStringList &envs);
 
+Q_SIGNALS:
+    void autoStart0Done();
+    void autoStart1Done();
+    void autoStart2Done();
+
 public: // remote methods, called by KLauncherAdaptor
+    void autoStart(int phase = 1);
+
     /**
      * Starts a program.
      * 'envs' are environment variables that will be added
@@ -195,6 +205,7 @@ public: // remote methods, called by KLauncherAdaptor
     void terminate_kdeinit();
 
 public Q_SLOTS:
+    void slotAutoStart();
     void slotDequeue();
     void slotKDEInitData(int);
     void slotNameOwnerChanged(const QString &name, const QString &oldOnwer, const QString &newOwner);
@@ -217,7 +228,9 @@ protected:
     KIO::ConnectionServer mConnectionServer;
     QList<QPointer<IdleSlave>> mSlaveList;
     QTimer mTimer;
+    QTimer mAutoTimer;
     bool bProcessingQueue;
+    AutoStart mAutoStart;
     QString mSlaveDebug;
     QString mSlaveValgrind;
     QString mSlaveValgrindSkin;
