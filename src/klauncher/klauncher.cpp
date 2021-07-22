@@ -113,10 +113,12 @@ KLauncher::KLauncher()
     Q_ASSERT(g_klauncher_self == nullptr);
     g_klauncher_self = this;
 
+    mAutoTimer.setSingleShot(true);
     new KLauncherAdaptor(this);
     mSlaveLauncherAdaptor = new KSlaveLauncherAdaptor(this);
     QDBusConnection::sessionBus().registerObject(QStringLiteral("/KLauncher"), this); // same as ktoolinvocation.cpp
 
+    connect(&mAutoTimer, SIGNAL(timeout()), this, SLOT(slotAutoStart()));
     connect(QDBusConnection::sessionBus().interface(),
             SIGNAL(serviceOwnerChanged(QString,QString,QString)),
             SLOT(slotNameOwnerChanged(QString,QString,QString)));
@@ -421,6 +423,49 @@ KLauncher::slotNameOwnerChanged(const QString &appId, const QString &oldOwner,
 }
 
 void
+KLauncher::autoStart(int phase)
+{
+    if (mAutoStart.phase() >= phase) {
+        return;
+    }
+    mAutoStart.setPhase(phase);
+    if (phase == 0) {
+        mAutoStart.loadAutoStartList();
+    }
+    mAutoTimer.start(0);
+}
+
+void
+KLauncher::slotAutoStart()
+{
+    KService::Ptr s;
+    do {
+        QString service = mAutoStart.startService();
+        qCDebug(KLAUNCHER) << "Service: " << mAutoStart.phase() << service;
+        if (service.isEmpty()) {
+            // Done
+            if (!mAutoStart.phaseDone()) {
+                mAutoStart.setPhaseDone();
+                switch (mAutoStart.phase()) {
+                case 0:
+                    emit autoStart0Done();
+                    break;
+                case 1:
+                    emit autoStart1Done();
+                    break;
+                case 2:
+                    emit autoStart2Done();
+                    break;
+                }
+            }
+            return;
+        }
+        s = new KService(service);
+    } while (!start_service(s, QStringList(), QStringList(), "0", false, true, QDBusMessage()));
+    // Loop till we find a service that we can start.
+}
+
+void
 KLauncher::requestDone(KLaunchRequest *request)
 {
     if ((request->status == KLaunchRequest::Running) ||
@@ -448,6 +493,10 @@ KLauncher::requestDone(KLaunchRequest *request)
             }
         }
 #endif
+    }
+
+    if (request->autoStart) {
+        mAutoTimer.start(0);
     }
 
     if (request->transaction.type() != QDBusMessage::InvalidMessage) {
@@ -575,6 +624,7 @@ KLauncher::requestStart(KLaunchRequest *request)
 void KLauncher::exec_blind(const QString &name, const QStringList &arg_list, const QStringList &envs, const QString &startup_id)
 {
     KLaunchRequest *request = new KLaunchRequest;
+    request->autoStart = false;
     request->name = name;
     request->arg_list =  arg_list;
     request->dbus_startup_type = KService::DBusNone;
@@ -617,7 +667,7 @@ KLauncher::start_service_by_desktop_path(const QString &serviceName, const QStri
         cancel_service_startup_info(nullptr, startup_id.toLocal8Bit(), envs);   // cancel it if any
         return false;
     }
-    return start_service(service, urls, envs, startup_id.toLocal8Bit(), blind, msg);
+    return start_service(service, urls, envs, startup_id.toLocal8Bit(), blind, false, msg);
 }
 
 bool
@@ -631,13 +681,13 @@ KLauncher::start_service_by_desktop_name(const QString &serviceName, const QStri
         cancel_service_startup_info(nullptr, startup_id.toLocal8Bit(), envs);   // cancel it if any
         return false;
     }
-    return start_service(service, urls, envs, startup_id.toLocal8Bit(), blind, msg);
+    return start_service(service, urls, envs, startup_id.toLocal8Bit(), blind, false, msg);
 }
 
 bool
 KLauncher::start_service(KService::Ptr service, const QStringList &_urls,
                          const QStringList &envs, const QByteArray &startup_id,
-                         bool blind, const QDBusMessage &msg)
+                         bool blind, bool autoStart, const QDBusMessage &msg)
 {
     QStringList urls = _urls;
     bool runPermitted = KDesktopFile::isAuthorizedDesktopFile(service->entryPath());
@@ -653,6 +703,7 @@ KLauncher::start_service(KService::Ptr service, const QStringList &_urls,
         return false;
     }
     KLaunchRequest *request = new KLaunchRequest;
+    request->autoStart = autoStart;
 
     enum DiscreteGpuCheck { NotChecked, Present, Absent };
     static DiscreteGpuCheck s_gpuCheck = NotChecked;
@@ -695,7 +746,7 @@ KLauncher::start_service(KService::Ptr service, const QStringList &_urls,
             if (!startup_id2.isEmpty() && startup_id2 != "0") {
                 startup_id2 = "0";    // can't use the same startup_id several times // krazy:exclude=doublequote_chars
             }
-            start_service(service, singleUrl, _envs, startup_id2, true, msg);
+            start_service(service, singleUrl, _envs, startup_id2, true, false, msg);
         }
         const QString firstURL = urls.at(0);
         urls.clear();
@@ -749,7 +800,7 @@ KLauncher::start_service(KService::Ptr service, const QStringList &_urls,
     send_service_startup_info(request, service, startup_id, _envs);
 
     // Request will be handled later.
-    if (!blind) {
+    if (!blind && !autoStart) {
         msg.setDelayedReply(true);
         request->transaction = msg;
     }
@@ -840,6 +891,7 @@ KLauncher::kdeinit_exec(const QString &app, const QStringList &args,
                         const QString &startup_id, bool wait, const QDBusMessage &msg)
 {
     KLaunchRequest *request = new KLaunchRequest;
+    request->autoStart = false;
     request->arg_list = args;
     request->name = app;
     request->dbus_startup_type = KService::DBusNone;
@@ -1038,6 +1090,7 @@ KLauncher::requestSlave(const QString &protocol,
     }
 #endif
     KLaunchRequest *request = new KLaunchRequest;
+    request->autoStart = false;
     request->name = name;
     request->arg_list =  arg_list;
     request->dbus_startup_type = KService::DBusNone;

@@ -89,6 +89,8 @@ if (KF5DocTools_FOUND)
     add_subdirectory(docs)
 endif()
 
+add_subdirectory(tests)
+
 install( FILES
 	"${CMAKE_CURRENT_BINARY_DIR}/KF5InitConfig.cmake"
     KF5InitMacros.cmake ${CMAKE_CURRENT_BINARY_DIR}/KF5InitConfigVersion.cmake
