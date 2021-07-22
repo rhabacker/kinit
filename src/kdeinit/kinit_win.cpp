@@ -204,7 +204,24 @@ static PSID getCurrentProcessOwner()
 
 static QString installRoot()
 {
-    return QLibraryInfo::location(QLibraryInfo::PrefixPath);
+    char spath[MAX_PATH*2];
+    HMODULE hm = NULL;
+
+    if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
+       (LPCSTR) &installRoot, &hm) == 0)
+    {
+        return QString(CMAKE_INSTALL_PREFIX);
+    }
+    if (GetModuleFileNameA(hm, spath, sizeof(spath)) == 0)
+    {
+        return QString(CMAKE_INSTALL_PREFIX);
+    }
+    QString path = QString(spath).toLower();
+    int index = path.lastIndexOf(QLatin1String("\\bin\\"));
+    if (index > -1)
+        path = path.left(index);
+    return path;
 }
 
 /**
@@ -216,7 +233,7 @@ public:
     ProcessListEntry(HANDLE _handle, QString _path, int _pid, PSID _owner = 0)
     {
         QFileInfo p(_path);
-        path = p.absolutePath();
+        path = p.absolutePath().replace("/", "\\").toLower();
         name = p.baseName();
         handle = _handle;
         pid = _pid;
@@ -358,7 +375,7 @@ ProcessListEntry *ProcessList::find(const QString &name)
             continue;
         }
 
-        if (!ple->path.isEmpty() && !ple->path.toLower().startsWith(installPrefix.toLower())) {
+        if (!ple->path.isEmpty() && !ple->path.startsWith(installPrefix)) {
             // process is outside of installation directory
             qDebug() << "path of the process" << name << "seems to be outside of the installPath:" << ple->path << installPrefix;
             continue;
@@ -444,7 +461,7 @@ void listAllRunningKDEProcesses(ProcessList &processList)
 
     const auto list = processList.list();
     for (const ProcessListEntry *ple : list) {
-        if (!ple->path.isEmpty() && ple->path.toLower().startsWith(installPrefix.toLower())) {
+        if (!ple->path.isEmpty() && ple->path.startsWith(installPrefix)) {
             fprintf(stderr, "path: %s name: %s pid: %u\n", ple->path.toLatin1().data(), ple->name.toLatin1().data(), ple->pid);
         }
     }
@@ -456,7 +473,7 @@ void terminateAllRunningKDEProcesses(ProcessList &processList)
 
     const auto list = processList.list();
     for (const ProcessListEntry *ple : list) {
-        if (!ple->path.isEmpty() && ple->path.toLower().startsWith(installPrefix.toLower())) {
+        if (!ple->path.isEmpty() && ple->path.startsWith(installPrefix)) {
             if (verbose) {
                 fprintf(stderr, "terminating path: %s name: %s pid: %u\n", ple->path.toLatin1().data(), ple->name.toLatin1().data(), ple->pid);
             }
