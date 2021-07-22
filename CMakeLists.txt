@@ -54,6 +54,7 @@ find_package(KF5WindowSystem ${KF5_DEP_VERSION} REQUIRED)
 find_package(KF5Crash ${KF5_DEP_VERSION} REQUIRED)
 find_package(KF5Config ${KF5_DEP_VERSION} REQUIRED)
 find_package(KF5DocTools ${KF5_DEP_VERSION})
+find_package(KF5DBusAddons ${KF5_DEP_VERSION} REQUIRED)
 
 if (NOT WIN32)
 find_package(Libcap)
