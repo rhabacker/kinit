@@ -59,6 +59,7 @@ typedef unsigned int pid_t;
 //#define ENABLE_EXIT
 
 #define KDED_EXENAME "kded5"
+#define KLAUNCHER_EXENAME "klauncher5"
 
 // print verbose messages
 int verbose = 0;
@@ -655,9 +656,9 @@ int main(int argc, char **argv, char **envp)
         }
     }
 
-    if (launch_klauncher && !processList.find("klauncher5")) {
-        pid = launch("klauncher5");
-        if (!pid || !checkIfRegisteredInDBus("org.kde.klauncher5", 10)) {
+    if (launch_klauncher && !processList.find(KLAUNCHER_EXENAME)) {
+        pid = launch(KLAUNCHER_EXENAME);
+        if (!pid || !checkIfRegisteredInDBus("org.kde." KLAUNCHER_EXENAME, 10)) {
             exit(1);
         }
     }
