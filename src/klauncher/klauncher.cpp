@@ -48,7 +48,6 @@
 #include <qplatformdefs.h>
 
 #include <kconfig.h>
-#include <QDebug>
 #include <klocalizedstring.h>
 #include <kdesktopfile.h>
 #include <kpluginloader.h> // to find kioslave modules
