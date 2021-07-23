@@ -494,7 +494,7 @@ void quitApplicationsOverDBus()
         }
         QDBusInterface *iface = new QDBusInterface(service,
                 QLatin1String("/MainApplication"),
-                QLatin1String("org.kde.KApplication"),
+                QLatin1String("org.qtproject.Qt.QCoreApplication"),
                 connection);
         if (!iface->isValid()) {
             if (verbose) {
