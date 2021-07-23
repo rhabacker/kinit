@@ -357,7 +357,8 @@ void ProcessList::init()
 #else
         PSID sid = 0;
 #endif
-        m_processes << new ProcessListEntry(hProcess, name, pe32.th32ProcessID, sid);
+        if (!name.isEmpty())
+            m_processes << new ProcessListEntry(hProcess, name, pe32.th32ProcessID, sid);
     } while (Process32Next(h, &pe32));
 #ifndef _WIN32_WCE
     CloseHandle(h);
