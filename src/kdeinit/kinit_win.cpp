@@ -66,6 +66,7 @@ typedef unsigned int pid_t;
 
 // print verbose messages
 int verbose = 0;
+int debug = 0;
 
 /// holds process list for suicide mode
 QList<QProcess *> startedProcesses;
@@ -225,6 +226,9 @@ static QString installRoot()
     int index = path.lastIndexOf(QLatin1String("\\bin\\"));
     if (index > -1)
         path = path.left(index);
+    if (debug) {
+        qCDebug(KDEINIT) << "got install root as" << path;
+    }
     return path;
 }
 
@@ -242,6 +246,8 @@ public:
         handle = _handle;
         pid = _pid;
         owner = copySid(_owner);
+        if (debug)
+            qCDebug(KDEINIT) << "adding process: path" << path << "name" << name;
     }
 
     ~ProcessListEntry()
@@ -379,6 +385,8 @@ ProcessListEntry *ProcessList::find(const QString &name)
         if (ple->name != name && ple->name != name + ".exe") {
             continue;
         }
+        if (debug)
+            qCDebug(KDEINIT) << "found process: path" << ple->path << "name" << ple->name;
 
         if (!ple->path.isEmpty() && !ple->path.startsWith(installPrefix)) {
             // process is outside of installation directory
@@ -566,6 +574,9 @@ int main(int argc, char **argv, char **envp)
         if (strcmp(safe_argv[i], "--verbose") == 0) {
             verbose = 1;
         }
+        if (strcmp(safe_argv[i], "--debug") == 0) {
+            debug = 1;
+        }
         if (strcmp(safe_argv[i], "--version") == 0) {
             printf("Qt: %s\n", qVersion());
             printf("KDE: %s\n", KINIT_VERSION_STRING);
@@ -573,6 +584,7 @@ int main(int argc, char **argv, char **envp)
         }
         if (strcmp(safe_argv[i], "--help") == 0) {
             printf("Usage: kdeinit5 [options]\n");
+            printf("   --debug                    print debugging messages\n");
 #ifdef ENABLE_EXIT
             printf("   --exit                     Terminate when kded has run\n");
 #endif
