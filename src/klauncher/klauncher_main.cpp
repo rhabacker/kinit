@@ -165,8 +165,12 @@ extern "C" Q_DECL_EXPORT int kdemain(int argc, char **argv)
        qputenv("QT_NO_GLIB", "1");
     }
 
+#ifdef HAVE_X11
     // We need a QGuiApplication as we use X11
     QGuiApplication app(argc, argv);
+#else
+    QCoreApplication app(argc, argv);
+#endif
     app.setApplicationName(QStringLiteral("klauncher5"));
     KDBusService service(KDBusService::Unique);
 
