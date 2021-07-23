@@ -177,7 +177,7 @@ extern "C" Q_DECL_EXPORT int kdemain(int argc, char **argv)
 
     // We need a QGuiApplication as we use X11
     QGuiApplication app(argc, argv);
-    app.setApplicationName(QStringLiteral("klauncher"));
+    app.setApplicationName(QStringLiteral("klauncher5"));
     KDBusService service(KDBusService::Unique);
 
     // Now get rid of QT_NO_GLIB again so launched processes don't inherit it
