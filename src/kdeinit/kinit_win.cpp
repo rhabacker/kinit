@@ -86,7 +86,7 @@ QList<QProcess *> startedProcesses;
 PSID copySid(PSID from)
 {
     if (!from) {
-        return 0;
+        return nullptr;
     }
     int sidLength = GetLengthSid(from);
     PSID to = (PSID) malloc(sidLength);
@@ -196,7 +196,7 @@ static PSID getProcessOwner(HANDLE hProcess)
         }
     }
 #endif
-    return 0;
+    return nullptr;
 }
 
 /**
@@ -238,7 +238,7 @@ static QString installRoot()
 class ProcessListEntry
 {
 public:
-    ProcessListEntry(HANDLE _handle, QString _path, int _pid, PSID _owner = 0)
+    ProcessListEntry(HANDLE _handle, QString _path, int _pid, PSID _owner = nullptr)
     {
         QFileInfo p(_path);
         path = p.absolutePath().replace("/", "\\").toLower();
@@ -290,7 +290,7 @@ public:
     collect process
     @param userSid  sid of user for which processes should be collected or 0 for all processes
     */
-    ProcessList(PSID userSid = 0);
+    ProcessList(PSID userSid = nullptr);
 
     ~ProcessList();
 
@@ -356,7 +356,7 @@ void ProcessList::init()
         QString name = getProcessName(pe32.th32ProcessID);
 #ifndef _WIN32_WCE
         PSID sid = getProcessOwner(hProcess);
-        if (!sid || m_userId && !EqualSid(m_userId, sid)) {
+        if (!sid || (m_userId && !EqualSid(m_userId, sid))) {
             freeSid(sid);
             continue;
         }
