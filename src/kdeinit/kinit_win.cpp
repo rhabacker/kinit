@@ -537,6 +537,20 @@ void quitApplicationsOverDBus()
     }
 }
 
+static bool callLauncherAutoStart()
+{
+    QDBusInterface *interface = new QDBusInterface("org.kde.klauncher5",
+                                                   "/KLauncher",
+                                                   "org.kde.KLauncher");
+    if (verbose)
+        fprintf(stderr, "trigger klauncher autoStart phase 0\n");
+
+    QList<QVariant> args;
+    args.append(0);
+    QDBusMessage result = interface->callWithArgumentList(QDBus::Block, "autoStart", args);
+    return result.type() == QDBusMessage::ReplyMessage;
+}
+
 int main(int argc, char **argv, char **envp)
 {
     pid_t pid = 0;
@@ -677,6 +691,7 @@ int main(int argc, char **argv, char **envp)
         if (!pid || !checkIfRegisteredInDBus("org.kde." KLAUNCHER_EXENAME, 10)) {
             exit(1);
         }
+        callLauncherAutoStart();
     }
 
     if (launch_kded && !processList.find(KDED_EXENAME)) {
