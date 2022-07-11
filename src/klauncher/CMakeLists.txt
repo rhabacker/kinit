@@ -31,6 +31,7 @@ target_link_libraries(kdeinit_klauncher
    KF5::WindowSystem # KStartupInfo + fixx11
    KF5::I18n   # i18n()
    Qt5::DBus
+   KF5::DBusAddons
 )
 if(WIN32)
     set_target_properties(klauncher PROPERTIES OUTPUT_NAME klauncher5)
@@ -44,6 +45,7 @@ if (HAVE_XCB)
     target_link_libraries(kdeinit_klauncher XCB::XCB)
 endif()
 
+target_link_libraries(klauncher KF5::DBusAddons)
 install(TARGETS kdeinit_klauncher ${KF5_INSTALL_TARGETS_DEFAULT_ARGS})
 install(TARGETS klauncher DESTINATION ${CMAKE_INSTALL_FULL_LIBEXECDIR_KF5} )
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/org.kde.KLauncher.xml DESTINATION ${KDE_INSTALL_DBUSINTERFACEDIR} RENAME kf5_org.kde.KLauncher.xml)
