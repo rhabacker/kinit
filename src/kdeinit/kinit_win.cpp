@@ -26,8 +26,8 @@
 
 #include <QProcess>
 #include <QFileInfo>
-#include <QDebug>
 #include <QLibraryInfo>
+#include <QLoggingCategory>
 
 // Under wince interface is defined, so undef it otherwise it breaks it
 #undef interface
@@ -36,6 +36,9 @@
 #include <QDBusConnectionInterface>
 
 #include <kinit_version.h>
+#include <kinit_win.h>
+
+Q_LOGGING_CATEGORY(KDEINIT, "kf5.kinit.kdeinit", QtWarningMsg)
 
 #if defined (Q_CC_MSVC)
 typedef unsigned int pid_t;
@@ -356,7 +359,7 @@ ProcessListEntry *ProcessList::find(const QString &name)
     QString installPrefix = installRoot();
     for (ProcessListEntry *ple : qAsConst(m_processes)) {
         if (ple->pid < 0) {
-            qDebug() << "negative pid!";
+            qCDebug(KDEINIT) << "negative pid!";
             continue;
         }
 
@@ -366,7 +369,7 @@ ProcessListEntry *ProcessList::find(const QString &name)
 
         if (!ple->path.isEmpty() && !ple->path.startsWith(installPrefix)) {
             // process is outside of installation directory
-            qDebug() << "path of the process" << name << "seems to be outside of the installPath:" << ple->path << installPrefix;
+            qCDebug(KDEINIT) << "path of the process" << name << "seems to be outside of the installPath:" << ple->path << installPrefix;
             continue;
         }
         return ple;
@@ -376,10 +379,10 @@ ProcessListEntry *ProcessList::find(const QString &name)
 
 bool ProcessList::terminateProcess(const QString &name)
 {
-    qDebug() << "going to terminate process" << name;
+    qCDebug(KDEINIT) << "going to terminate process" << name;
     ProcessListEntry *p = find(name);
     if (!p) {
-        qDebug() << "could not find ProcessListEntry for process name" << name;
+        qCDebug(KDEINIT) << "could not find ProcessListEntry for process name" << name;
         return false;
     }
 
