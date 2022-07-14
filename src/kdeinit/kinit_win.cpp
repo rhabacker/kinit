@@ -525,6 +525,31 @@ void quitApplicationsOverDBus()
     }
 }
 
+bool triggerAutoStart(int phase)
+{
+    if (verbose)
+        fprintf(stderr, "trigger autostart phase %d\n", phase);
+    QDBusConnection bus = QDBusConnection::sessionBus();
+    QDBusInterface *iface = new QDBusInterface(QLatin1String("org.kde.klauncher5"),
+                            QLatin1String("/KLauncher"),
+                            QLatin1String("org.kde.KLauncher"),
+                            bus);
+    if (!iface->isValid()) {
+        if (verbose)
+            fprintf(stderr, "invalid interface org.kde.klauncher5\n");
+        delete iface;
+        return false;
+    }
+    iface->call("autoStart", phase);
+    if (iface->lastError().isValid()) {
+        if (verbose)
+            fprintf(stderr,"could not call method autoStart on interface org.kde.klauncher5\n");
+        delete iface;
+        return false;
+    }
+    return true;
+}
+
 int main(int argc, char **argv, char **envp)
 {
     pid_t pid = 0;
@@ -537,11 +562,15 @@ int main(int argc, char **argv, char **envp)
     bool listAppsInDBus = false;
     bool quitAppsOverDBus = false;
     bool shutdown = false;
+    bool autostart = true;
 
     /** Save arguments first... **/
     char **safe_argv = (char **) malloc(sizeof(char *) * argc);
     for (int i = 0; i < argc; i++) {
         safe_argv[i] = strcpy((char *)malloc(strlen(argv[i]) + 1), argv[i]);
+        if (strcmp(safe_argv[i], "--no-autostart") == 0) {
+            autostart = false;
+        }
         if (strcmp(safe_argv[i], "--no-dbus") == 0) {
             launch_dbus = false;
         }
@@ -580,6 +609,7 @@ int main(int argc, char **argv, char **envp)
             printf("   --list                     list kde processes\n");
             printf("   --list-dbus-apps           list all applications registered in dbus\n");
             printf("   --quit-over-dbus           quit all application registered in dbus\n");
+            printf("   --no-autostart             do not trigger auto start support\n");
             printf("   --no-dbus                  do not start dbus-daemon\n");
             printf("   --no-klauncher             do not start klauncher\n");
             printf("   --no-kded                  do not start kded\n");
@@ -667,6 +697,12 @@ int main(int argc, char **argv, char **envp)
         }
     }
 
+    if (autostart)
+        triggerAutoStart(0);
+
+    if (autostart)
+        triggerAutoStart(1);
+
     if (launch_kded && !processList.find(KDED_EXENAME)) {
         pid = launch(KDED_EXENAME);
         if (!pid || !checkIfRegisteredInDBus("org.kde." KDED_EXENAME, 10)) {
@@ -683,6 +719,9 @@ int main(int argc, char **argv, char **envp)
             pid = launch(safe_argv[i]);
         }
     }
+
+    if (autostart)
+        triggerAutoStart(2);
 
     /** Free arguments **/
     for (int i = 0; i < argc; i++) {
